@@ -1,4 +1,5 @@
 import {attendanceStore} from './attendance-store.js';
+import {reportingStore} from './reporting-store.js';
 import pg from 'pg';
 import {migrate} from './migrations.js';
 import {normalizeLabel,normalizeFamily,normalizeCatalog} from './catalog.js';
@@ -12,7 +13,7 @@ import {decryptConnectorCredential,encryptConnectorCredential,normalizeBackfillC
 
 const fields=`id,label_id AS "labelId",source,external_id AS "externalId",type,occurred_at AS "occurredAt",
 quantity::text,amount_minor::text AS "amountMinor",currency,artist,release_title AS release,track,channel,territory,
-artist_id AS "artistId",release_id AS "releaseId",track_id AS "trackId",metadata`;
+artist_id AS "artistId",release_id AS "releaseId",track_id AS "trackId",isrc,metadata`;
 const catalogFields=`id,label_id AS "labelId",kind,name,artist_id AS "artistId",release_id AS "releaseId",isrc,upc`;
 function factRow(r) { return {...r,quantity:exact(r.quantity),amountMinor:exact(r.amountMinor),occurredAt:new Date(r.occurredAt).toISOString()}; }
 async function audit(client,actor,action,labelIds,details={}) {
@@ -48,7 +49,21 @@ export async function createStore(pool,{connectorKey}={}) {
       requireThat(found && found.kind === kind,'Unknown '+kind+' reference in the fact label');
       return found;
     }
+    const isrcCache=new Map();
     for (const f of facts) {
+      if (f.isrc) {
+        // Canonical ISRC mapping: exactly one label track resolves attribution; otherwise the fact stays unmapped.
+        const key=JSON.stringify([f.labelId,f.isrc]);
+        if (!isrcCache.has(key)) isrcCache.set(key,(await client.query(`SELECT id,artist_id AS "artistId",release_id AS "releaseId" FROM music_catalog
+WHERE label_id=$1 AND kind='track' AND isrc=$2`,[f.labelId,f.isrc])).rows);
+        const tracks=isrcCache.get(key);
+        if (tracks.length===1) {
+          const track=tracks[0];
+          requireThat((!f.trackId || f.trackId===track.id) && (!f.releaseId || f.releaseId===track.releaseId) && (!f.artistId || f.artistId===track.artistId),
+            'Fact catalog attribution conflicts with its ISRC mapping',422);
+          f.trackId=track.id;f.releaseId=track.releaseId;f.artistId=track.artistId;
+        }
+      }
       if (f.artistId) await item(f.labelId,f.artistId,'artist');
       if (f.releaseId) {
         const release=await item(f.labelId,f.releaseId,'release');
@@ -58,17 +73,18 @@ export async function createStore(pool,{connectorKey}={}) {
         const track=await item(f.labelId,f.trackId,'track');
         requireThat((!f.releaseId || track.releaseId === f.releaseId) && (!f.artistId || track.artistId === f.artistId),'Track attribution does not match its catalog');
       }
-      await client.query(`INSERT INTO music_facts(id,label_id,source,external_id,type,occurred_at,quantity,amount_minor,currency,artist,release_title,track,channel,territory,artist_id,release_id,track_id,metadata)
-VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+      await client.query(`INSERT INTO music_facts(id,label_id,source,external_id,type,occurred_at,quantity,amount_minor,currency,artist,release_title,track,channel,territory,artist_id,release_id,track_id,metadata,isrc)
+VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
 ON CONFLICT(label_id,source,external_id) DO UPDATE SET type=EXCLUDED.type,occurred_at=EXCLUDED.occurred_at,
 quantity=EXCLUDED.quantity,amount_minor=EXCLUDED.amount_minor,currency=EXCLUDED.currency,artist=EXCLUDED.artist,
 release_title=EXCLUDED.release_title,track=EXCLUDED.track,channel=EXCLUDED.channel,territory=EXCLUDED.territory,
-artist_id=EXCLUDED.artist_id,release_id=EXCLUDED.release_id,track_id=EXCLUDED.track_id,metadata=EXCLUDED.metadata,updated_at=now()`,
-[f.id,f.labelId,f.source,f.externalId,f.type,f.occurredAt,String(f.quantity),String(f.amountMinor),f.currency,f.artist,f.release,f.track,f.channel,f.territory,f.artistId,f.releaseId,f.trackId,JSON.stringify(f.metadata)]);
+artist_id=EXCLUDED.artist_id,release_id=EXCLUDED.release_id,track_id=EXCLUDED.track_id,metadata=EXCLUDED.metadata,isrc=EXCLUDED.isrc,updated_at=now()`,
+[f.id,f.labelId,f.source,f.externalId,f.type,f.occurredAt,String(f.quantity),String(f.amountMinor),f.currency,f.artist,f.release,f.track,f.channel,f.territory,f.artistId,f.releaseId,f.trackId,JSON.stringify(f.metadata),f.isrc || null]);
     }
   }
   return {
     ...attendanceStore(pool,transaction),
+    ...reportingStore(pool),
     async importDistributorStatement({csv,labelId,source,statementId,mapping},actor='system') {
       labelId=identifier(labelId,'labelId');
       source=identifier(source,'source');
@@ -423,6 +439,11 @@ GROUP BY l.id,l.name ORDER BY l.name,l.id`,[labelIds])).rows;
         if (item.releaseId) {
           const release=(await c.query('SELECT kind,artist_id FROM music_catalog WHERE label_id=$1 AND id=$2',[item.labelId,item.releaseId])).rows[0];
           requireThat(release?.kind === 'release' && release.artist_id === item.artistId,'releaseId must reference this primary artist’s release in the same label');
+        }
+        if (item.isrc) {
+          await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',['isrc:'+item.labelId+':'+item.isrc]);
+          const taken=await c.query(`SELECT id FROM music_catalog WHERE label_id=$1 AND kind='track' AND isrc=$2 AND id<>$3`,[item.labelId,item.isrc,item.id]);
+          requireThat(!taken.rows.length,'ISRC is already mapped to another track in this label',409);
         }
         const result=await c.query(`INSERT INTO music_catalog(label_id,id,kind,name,artist_id,release_id,isrc,upc) VALUES($1,$2,$3,$4,$5,$6,$7,$8)
 ON CONFLICT(label_id,id) DO UPDATE SET name=EXCLUDED.name,artist_id=EXCLUDED.artist_id,release_id=EXCLUDED.release_id,isrc=EXCLUDED.isrc,upc=EXCLUDED.upc

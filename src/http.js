@@ -5,6 +5,8 @@ import {timestamp} from './validation.js';
 import {PLATFORMS,normalizePlatformBatch} from './platforms.js';
 import {loadWebhookSecrets,verifyWebhook} from './webhooks.js';
 import {clientAddress,createFailureLimiter} from './rate-limit.js';
+import {evaluateAlerts,alertDefaults} from './alerts.js';
+import {csvRow,factColumns,rollupColumns} from './csv.js';
 
 export async function readBody(req) {
   const chunks=[];let size=0;
@@ -34,6 +36,11 @@ export async function reportFilter(params,principal,store) {
   const to=params.has('to') ? timestamp(params.get('to'),'to') : null;
   requireThat(!from || !to || from < to,'from must be earlier than to',400);
   return {...scope,from,to};
+}
+function optionalInteger(params,name) {
+  if (!params.has(name)) return undefined;
+  requireThat(params.getAll(name).length===1 && /^\d{1,10}$/.test(params.get(name)),name+' must be an integer',400);
+  return Number(params.get(name));
 }
 export async function report(store,filter) {
   const summary=createSummary();
@@ -178,6 +185,46 @@ export function handler(store,{credentials=loadCredentials(),webhookSecrets=load
         }
         return respond(405,{error:'Method not allowed'});
       }
+      if (req.method === 'GET' && ['/v1/facts','/v1/rollups/daily','/v1/catalog/unmapped-isrcs','/v1/alerts','/v1/exports/facts.csv','/v1/exports/daily.csv'].includes(url.pathname)) {
+        permit(principal,'read');
+        const filter=await reportFilter(url.searchParams,principal,store);
+        const limit=optionalInteger(url.searchParams,'limit'),cursor=url.searchParams.get('cursor');
+        if (url.pathname === '/v1/facts') return respond(200,{...await store.factsPage({...filter,limit,cursor}),scope:{labelIds:filter.labelIds}});
+        if (url.pathname === '/v1/rollups/daily') return respond(200,{...await store.dailyRollups({...filter,limit,cursor}),scope:{labelIds:filter.labelIds},
+          deduplication:'shared logical activities counted once, as in /v1/summary'});
+        if (url.pathname === '/v1/catalog/unmapped-isrcs') return respond(200,{items:await store.unmappedIsrcs({...filter,limit}),scope:{labelIds:filter.labelIds}});
+        if (url.pathname === '/v1/alerts') {
+          const options={};
+          for (const [key,min,max] of [['staleHours',1,8760],['backlogMinutes',1,10080],['minBaseline',1,1e9]]) {
+            const value=optionalInteger(url.searchParams,key);
+            if (value!==undefined) { requireThat(value>=min && value<=max,key+' is out of range',400);options[key]=value; }
+          }
+          const now=new Date();
+          const inputs=await store.alertInputs({labelIds:filter.labelIds,sources:filter.sources,now});
+          return respond(200,{alerts:evaluateAlerts(inputs,{now,...options}),evaluatedAt:now.toISOString(),window:inputs.window,
+            thresholds:{...alertDefaults,...options},scope:{labelIds:filter.labelIds}});
+        }
+        res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
+          'Content-Disposition':'attachment; filename="'+(url.pathname.endsWith('daily.csv') ? 'daily-rollups' : 'facts')+'.csv"'});
+        if (url.pathname === '/v1/exports/facts.csv') {
+          res.write(csvRow(factColumns));
+          for await (const fact of store.iterate(filter)) if (!res.write(csvRow(factColumns.map(c=>fact[c])))) await new Promise(r=>res.once('drain',r));
+        } else {
+          res.write(csvRow(rollupColumns));
+          let next=null;
+          do {
+            const page=await store.dailyRollups({...filter,limit:5000,cursor:next});
+            for (const row of page.rollups) res.write(csvRow(rollupColumns.map(c=>row[c])));
+            next=page.nextCursor;
+          } while (next);
+        }
+        return res.end();
+      }
+      const isrcRoute=/^\/v1\/catalog\/isrc\/([A-Za-z0-9-]{12,20})$/.exec(url.pathname);
+      if (req.method === 'GET' && isrcRoute) {
+        permit(principal,'read');const filter=await reportFilter(url.searchParams,principal,store);
+        return respond(200,{...await store.catalogByIsrc({labelIds:filter.labelIds,isrc:isrcRoute[1]}),scope:{labelIds:filter.labelIds}});
+      }
       if (req.method === 'GET' && url.pathname === '/v1/scopes') {
         permit(principal,'read');
         return respond(200,await store.scopes(principal.labels.includes('*') ? null : principal.labels));
@@ -186,7 +233,11 @@ export function handler(store,{credentials=loadCredentials(),webhookSecrets=load
         permit(principal,'read');
         const filter=await reportFilter(url.searchParams,principal,store);
         if (url.pathname === '/v1/sources') return respond(200,{sources:await store.sources(filter),scope:{labelIds:filter.labelIds}});
-        if (url.pathname === '/v1/catalog') return respond(200,{items:await store.catalog(filter),scope:{labelIds:filter.labelIds}});
+        if (url.pathname === '/v1/catalog') {
+          if (url.searchParams.has('limit') || url.searchParams.has('cursor') || url.searchParams.has('kind'))
+            return respond(200,{...await store.catalogPage({labelIds:filter.labelIds,kind:url.searchParams.get('kind'),limit:optionalInteger(url.searchParams,'limit'),cursor:url.searchParams.get('cursor')}),scope:{labelIds:filter.labelIds}});
+          return respond(200,{items:await store.catalog(filter),scope:{labelIds:filter.labelIds}});
+        }
         return respond(200,await report(store,filter));
       }
       if (req.method === 'GET' && url.pathname === '/v1/audit') {
@@ -210,6 +261,7 @@ export function handler(store,{credentials=loadCredentials(),webhookSecrets=load
       }
       return respond(404,{error:'Not found'});
     } catch(error) {
+      if (res.headersSent) { onError({event:'stream.failed',name:error.name,code:error.code || 'internal'});return res.destroy(); }
       if (error instanceof ApiError) return respond(error.status,{error:error.message});
       // Database internals and request content do not go into client responses or logs.
       onError({event:'request.failed',name:error.name,code:error.code || 'internal'});

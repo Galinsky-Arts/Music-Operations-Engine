@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {requireThat} from './errors.js';
 import {identifier, integer, exact, timestamp} from './validation.js';
 import {platformBuckets,addPlatformMetrics,platformReport} from './metrics.js';
+import {canonicalIsrc} from './catalog.js';
 
 export const TYPES = ['sale','stream','play','attendance','event','refund','royalty','reward','groove','contribution'];
 export function normalizeFact(raw, source='manual', context={}) {
@@ -30,7 +31,8 @@ export function normalizeFact(raw, source='manual', context={}) {
   const result={source,labelId,externalId,type,occurredAt,quantity:exact(quantity),amountMinor:exact(amountMinor),currency,...names,
     artistId:raw.artistId ? identifier(raw.artistId,'artistId') : null,
     releaseId:raw.releaseId ? identifier(raw.releaseId,'releaseId') : null,
-    trackId:raw.trackId ? identifier(raw.trackId,'trackId') : null,metadata};
+    trackId:raw.trackId ? identifier(raw.trackId,'trackId') : null,
+    isrc:raw.isrc ? canonicalIsrc(raw.isrc) : null,metadata};
   result.id=createHash('sha256').update(labelId+'\0'+source+'\0'+externalId).digest('hex');
   return result;
 }

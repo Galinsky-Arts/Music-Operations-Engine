@@ -7,16 +7,24 @@ export function normalizeLabel(raw) {
   requireThat(Array.isArray(familyIds) && familyIds.length <= 100,'familyIds must be an array of up to 100 families');
   return {id:identifier(raw.id),name:title(raw.name),familyIds:[...new Set(familyIds.map(id=>identifier(id,'familyId')))]};
 }
+/** Canonical ISRC form: 12 characters, uppercase, no hyphens or spaces (CC-XXX-YY-NNNNN). */
+export function canonicalIsrc(value,name='isrc') {
+  requireThat(typeof value==='string' && value.length<=20,'Invalid '+name);
+  const isrc=value.replace(/[-\s]/g,'').toUpperCase();
+  requireThat(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(isrc),'Invalid '+name);
+  return isrc;
+}
 export function normalizeCatalog(raw) {
   requireThat(['artist','release','track'].includes(raw.kind),'Catalog kind must be artist, release, or track');
   const artistId=raw.artistId ? identifier(raw.artistId,'artistId') : null;
   const releaseId=raw.releaseId ? identifier(raw.releaseId,'releaseId') : null;
   requireThat(raw.kind === 'artist' ? !artistId && !releaseId : Boolean(artistId),'Releases and tracks require their primary artistId');
   requireThat(raw.kind === 'track' ? Boolean(releaseId) : !releaseId,'Tracks require a releaseId; artists and releases cannot have one');
-  requireThat(!raw.isrc || (raw.kind === 'track' && /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(raw.isrc)),'Invalid track ISRC');
+  requireThat(!raw.isrc || raw.kind === 'track','Invalid track ISRC');
+  const isrc=raw.isrc ? canonicalIsrc(raw.isrc,'track ISRC') : null;
   requireThat(!raw.upc || (raw.kind === 'release' && /^\d{12,13}$/.test(raw.upc)),'Invalid release UPC');
   const externalIds=raw.externalIds ?? [];
   requireThat(Array.isArray(externalIds) && externalIds.length <= 100,'externalIds must contain up to 100 mappings');
-  return {id:identifier(raw.id),labelId:identifier(raw.labelId,'labelId'),kind:raw.kind,name:title(raw.name),artistId,releaseId,isrc:raw.isrc||null,upc:raw.upc||null,
+  return {id:identifier(raw.id),labelId:identifier(raw.labelId,'labelId'),kind:raw.kind,name:title(raw.name),artistId,releaseId,isrc,upc:raw.upc||null,
     externalIds:externalIds.map(m=>({source:identifier(m.source,'source'),externalId:identifier(m.externalId,'externalId')}))};
 }

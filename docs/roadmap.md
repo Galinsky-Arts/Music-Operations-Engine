@@ -27,3 +27,5 @@ PR #6 implements milestone 3's durable job control plane: scoped enqueue and cla
 
 Every adapter reports provenance, event time, ingest time and source freshness. Never conflate money across currencies or represent estimated payouts as settled revenue.
 
+
+2026-11-15: ISRC canonical mapping (milestone 11), keyset pagination and on-demand SQL daily rollups (milestone 12), and CSV exports with derived anomaly/operational alerts (milestone 15) are implemented; see `reporting-and-exports.md`. Materialized rollup tables, alert delivery, budgets and operational acceptance remain open. An optional in-process worker handles inline ingest jobs; authentication failures are rate limited per process.

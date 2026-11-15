@@ -65,6 +65,7 @@ export async function serve(store,options={}) {
       const response=await fetch(base+path,{method,headers:{Authorization:'Bearer '+key,...(body ? {'Content-Type':'application/json'} : {}),...headers},body:body ? JSON.stringify(body) : undefined});
       return {status:response.status,body:await response.json()};
     },
+    url(path) { return base+path; },
     async close(){server.closeIdleConnections();await new Promise(r=>server.close(r));}
   };
 }

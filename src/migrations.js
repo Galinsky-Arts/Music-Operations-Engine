@@ -147,6 +147,12 @@ export const migrations = [
       UNIQUE(label_id,event_id,session_id,source_receipt_id)
     );
     CREATE INDEX music_attendance_scope ON music_attendance_reports(label_id,event_id,session_id,occurred_at,id);
+  `},
+  {version:11,sql:`
+    ALTER TABLE music_facts ADD COLUMN IF NOT EXISTS isrc char(12);
+    CREATE INDEX IF NOT EXISTS music_facts_label_isrc ON music_facts(label_id,isrc) WHERE isrc IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS music_catalog_label_isrc ON music_catalog(label_id,isrc) WHERE isrc IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS music_facts_scope_updated ON music_facts(label_id,source,updated_at);
   `}
 ];
 
