@@ -19,5 +19,8 @@
     "./client": "./src/client.js",
     "./store": "./src/store.js",
     "./connectors": "./src/connectors.js"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -4,6 +4,7 @@ import {ApiError,requireThat} from './errors.js';
 import {timestamp} from './validation.js';
 import {PLATFORMS,normalizePlatformBatch} from './platforms.js';
 import {loadWebhookSecrets,verifyWebhook} from './webhooks.js';
+import {clientAddress,createFailureLimiter} from './rate-limit.js';
 
 export async function readBody(req) {
   const chunks=[];let size=0;
@@ -40,19 +41,31 @@ export async function report(store,filter) {
   return {...summary.value(),scope:{labelIds:filter.labelIds,selection:filter.selection,familyId:filter.familyId},from:filter.from,to:filter.to,
     partial:false,synthetic:false,generatedAt:new Date().toISOString()};
 }
-export function handler(store,{credentials=loadCredentials(),webhookSecrets=loadWebhookSecrets(),corsOrigin=process.env.CORS_ORIGIN,onError=console.error}={}) {
+export function handler(store,{credentials=loadCredentials(),webhookSecrets=loadWebhookSecrets(),corsOrigin=process.env.CORS_ORIGIN,onError=console.error,
+  trustProxy=process.env.TRUST_PROXY==='1',loginLimiter=createFailureLimiter({limit:10}),authLimiter=createFailureLimiter({limit:30})}={}) {
   return async (req,res)=>{
-    const respond=(status,value)=>reply(req,res,status,value,corsOrigin);
+    const respond=(status,value,headers)=>{ if (headers) for (const [k,v] of Object.entries(headers)) res.setHeader(k,v); return reply(req,res,status,value,corsOrigin); };
+    const client='ip:'+clientAddress(req,trustProxy);
     try {
       const url=new URL(req.url,'http://localhost');
       if (req.method === 'OPTIONS') return respond(204);
       if (req.method === 'GET' && url.pathname === '/health') return respond(200,{ok:await store.health(),service:'music-operations-engine'});
       if (req.method === 'POST' && url.pathname === '/v1/auth/token') {
         const {data}=await readBody(req);
-        const session=await store.issueSession(data.email,data.password);
+        const account='account:'+String(data.email || '').trim().toLowerCase().slice(0,320);
+        const wait=loginLimiter.retryAfterSeconds(client,account);
+        if (wait) return respond(429,{error:'Too many failed sign-in attempts'},{'Retry-After':String(wait)});
+        let session;
+        try { session=await store.issueSession(data.email,data.password); }
+        catch(error) { if (error instanceof ApiError && error.status===401) loginLimiter.fail(client,account); throw error; }
+        loginLimiter.reset(client);
         return respond(200,{token:session.token,tokenType:'Bearer',expiresAt:session.expiresAt});
       }
-      const principal=await authenticateRequest(req,credentials,store);
+      const authWait=authLimiter.retryAfterSeconds(client);
+      if (authWait) return respond(429,{error:'Too many failed authentication attempts'},{'Retry-After':String(authWait)});
+      let principal;
+      try { principal=await authenticateRequest(req,credentials,store); }
+      catch(error) { if (error instanceof ApiError && error.status===401) authLimiter.fail(client); throw error; }
       if (url.pathname === '/v1/attendance') {
         if (req.method === 'POST') {
           permit(principal,'ingest');

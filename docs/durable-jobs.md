@@ -22,3 +22,7 @@ List and health endpoints accept the same `labelId`, `labelIds`, `familyId`, and
 ## Operational boundary
 
 Deploy workers with unique service credentials, short polling intervals, graceful shutdown and metrics. Production still requires worker deployment, queue-depth and lease-expiry alerts, database backup/restore verification, provider-specific idempotency, and runbooks for replaying dead letters. GitHub CI verifies the contract and state transitions but is not evidence of production worker or provider health.
+
+## In-process worker (2026-11-15)
+
+Set `WORKER_ENABLED=1` to run `src/worker.js` inside the API process. It polls every `WORKER_INTERVAL_MS` (default 15000) and claims jobs only for `WORKER_SOURCES` (default `manual`), using the same leases, bounded retries and dead-letter rules as external workers. The only built-in handler is inline `ingest`: `payload.facts` (64 KiB job limit) is normalized exactly like `POST /v1/ingest`, scoped to the job's label, and platform sources are refused because they require their signed endpoint. Unsupported kinds such as `resync` dead-letter when their source is configured for this worker; jobs for sources not listed stay queued and visible in `/v1/source-health`. Live provider resync handlers, queue-depth alerting and multi-replica worker operation remain separate gates.
