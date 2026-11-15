@@ -26,7 +26,7 @@ const factRow=r=>({...r,quantity:exact(r.quantity),amountMinor:exact(r.amountMin
 
 // Shared logical activities (one physical measurement reported for several labels/sources) count once,
 // at their first (occurred_at,id) occurrence, matching the streaming summary in core.js.
-const dedupedFacts=`WITH scoped AS (
+export const dedupedFacts=`WITH scoped AS (
   SELECT * FROM music_facts WHERE label_id=ANY($1::text[]) AND ($2::text[] IS NULL OR source=ANY($2))
     AND ($3::timestamptz IS NULL OR occurred_at>=$3) AND ($4::timestamptz IS NULL OR occurred_at<$4)
 ), deduped AS (
