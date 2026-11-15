@@ -1,5 +1,5 @@
 {
-  "repository": "neophilism/Music-Operations-Engine",
+  "repository": "Galinsky-Arts/Music-Operations-Engine",
   "title": "Music-Operations-Engine",
   "planVerified": true,
   "plannedPrCount": 16,
@@ -11,7 +11,7 @@
   "scopeNote": "Partial package mapping does not count full implementation.",
   "schemaVersion": 1,
   "roadmapVersion": 1,
-  "observedAt": "2026-10-11T17:38:37.702Z",
+  "observedAt": "2026-11-15T18:48:31Z",
   "units": [
     {
       "id": "MOE-001",
@@ -34,7 +34,10 @@
       ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [],
+      "contributingPrs": [
+        16
+      ]
     },
     {
       "id": "MOE-003",
@@ -45,7 +48,10 @@
       ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [],
+      "contributingPrs": [
+        16
+      ]
     },
     {
       "id": "MOE-004",
@@ -63,7 +69,9 @@
       "id": "MOE-005",
       "title": "Distributor imports and settlements",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        11
+      ],
       "dependsOn": [],
       "externalDependencies": [],
       "externalPrerequisites": []
@@ -81,7 +89,9 @@
       "id": "MOE-007",
       "title": "Ticketing and in-person events",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        12
+      ],
       "dependsOn": [],
       "externalDependencies": [],
       "externalPrerequisites": []
@@ -90,7 +100,9 @@
       "id": "MOE-008",
       "title": "TrackZero verified speaker adapter",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        13
+      ],
       "sourcePartialPrEvidence": [
         3
       ],
@@ -102,7 +114,9 @@
       "id": "MOE-009",
       "title": "SceneSignal session adapter",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        14
+      ],
       "sourcePartialPrEvidence": [
         3
       ],
@@ -130,7 +144,10 @@
       ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [],
+      "contributingPrs": [
+        17
+      ]
     },
     {
       "id": "MOE-012",
@@ -142,7 +159,10 @@
       ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [],
+      "contributingPrs": [
+        17
+      ]
     },
     {
       "id": "MOE-013",
@@ -172,7 +192,10 @@
       "prs": [],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [],
+      "contributingPrs": [
+        17
+      ]
     },
     {
       "id": "MOE-016",
@@ -189,109 +212,199 @@
   ],
   "pullRequests": [
     {
-      "id": 4817623679,
-      "number": 7,
-      "title": "MOE-04: add connector manifests and encrypted credential storage",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/7",
+      "id": 4805956083,
+      "number": 1,
+      "title": "Phase 1: build operational foundation",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/1",
       "state": "closed",
       "draft": false,
-      "createdAt": "2026-10-11T08:08:54.000Z",
-      "updatedAt": "2026-10-11T08:14:09.000Z",
-      "closedAt": "2026-10-11T08:14:09.000Z",
-      "mergedAt": "2026-10-11T08:14:09.000Z",
-      "headSha": "54c6746b50f5d91bfe432fc072a8c9a5ff7a024a",
+      "createdAt": "2026-10-09T21:16:50Z",
+      "updatedAt": "2026-10-10T00:45:50Z",
+      "closedAt": "2026-10-10T00:45:50Z",
+      "mergedAt": "2026-10-10T00:45:50Z",
+      "headSha": "53a8cfad6980e114f733451ae0134684e08a8e6d",
       "baseRef": "main",
-      "mergeCommitSha": "ed441847637d010519dd8202c9bea1529b91c006"
-    },
-    {
-      "id": 4817416665,
-      "number": 6,
-      "title": "MOE-03: add durable jobs, retries, and source health",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/6",
-      "state": "closed",
-      "draft": false,
-      "createdAt": "2026-10-11T07:31:53.000Z",
-      "updatedAt": "2026-10-11T07:33:09.000Z",
-      "closedAt": "2026-10-11T07:33:09.000Z",
-      "mergedAt": "2026-10-11T07:33:09.000Z",
-      "headSha": "48358be815274f39c343520636282b018a528368",
-      "baseRef": "main",
-      "mergeCommitSha": "ecae0758e271fbc2a73e101a10896f734aec3e4c"
-    },
-    {
-      "id": 4817382655,
-      "number": 5,
-      "title": "MOE-02: add interactive accounts and short-lived sessions",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/5",
-      "state": "closed",
-      "draft": false,
-      "createdAt": "2026-10-11T07:25:51.000Z",
-      "updatedAt": "2026-10-11T07:27:12.000Z",
-      "closedAt": "2026-10-11T07:27:12.000Z",
-      "mergedAt": "2026-10-11T07:27:12.000Z",
-      "headSha": "5843dbce349966cfa9861d673f532a3a29bc93d8",
-      "baseRef": "main",
-      "mergeCommitSha": "437950ca3b11715f8f91d7cda9ead47d226c0adb"
-    },
-    {
-      "id": 4807458467,
-      "number": 4,
-      "title": "Document merged engine foundation and production launch checks",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/4",
-      "state": "closed",
-      "draft": false,
-      "createdAt": "2026-10-10T00:52:08.000Z",
-      "updatedAt": "2026-10-10T00:57:05.000Z",
-      "closedAt": "2026-10-10T00:57:05.000Z",
-      "mergedAt": "2026-10-10T00:57:05.000Z",
-      "headSha": "8660984a16839a13756be88ea4121cce6a701f83",
-      "baseRef": "main",
-      "mergeCommitSha": "1fbc4a39f649b45b89eb66cd135a66776b5a9815"
-    },
-    {
-      "id": 4806325038,
-      "number": 3,
-      "title": "Track TrackZero and SceneSignal music across labels and families",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/3",
-      "state": "closed",
-      "draft": false,
-      "createdAt": "2026-10-09T22:00:59.000Z",
-      "updatedAt": "2026-10-10T00:46:05.000Z",
-      "closedAt": "2026-10-10T00:46:05.000Z",
-      "mergedAt": "2026-10-10T00:46:05.000Z",
-      "headSha": "f81caf37a895cbf21d430814d5ca67e3d83d3a45",
-      "baseRef": "main",
-      "mergeCommitSha": "bc7e388f52ac3f2f0b17324b662c51530133dd0f"
+      "mergeCommitSha": "f1592b0c0afe1d06783a082c8b5eb1338ef84b1c"
     },
     {
       "id": 4806191609,
       "number": 2,
       "title": "Add label/family selection and access-scoped music operations",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/2",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/2",
       "state": "closed",
       "draft": false,
-      "createdAt": "2026-10-09T21:44:09.000Z",
-      "updatedAt": "2026-10-10T00:46:00.000Z",
-      "closedAt": "2026-10-10T00:46:00.000Z",
-      "mergedAt": "2026-10-10T00:46:00.000Z",
+      "createdAt": "2026-10-09T21:44:09Z",
+      "updatedAt": "2026-10-10T00:46:00Z",
+      "closedAt": "2026-10-10T00:46:00Z",
+      "mergedAt": "2026-10-10T00:46:00Z",
       "headSha": "55a60d773fac44c85a29fac05659b168ee9feeb8",
       "baseRef": "main",
       "mergeCommitSha": "0d0038532da08c8df3b79e711eb0223db07faffc"
     },
     {
-      "id": 4805956083,
-      "number": 1,
-      "title": "Phase 1: build operational foundation",
-      "url": "https://github.com/neophilism/Music-Operations-Engine/pull/1",
+      "id": 4806325038,
+      "number": 3,
+      "title": "Track TrackZero and SceneSignal music across labels and families",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/3",
       "state": "closed",
       "draft": false,
-      "createdAt": "2026-10-09T21:16:50.000Z",
-      "updatedAt": "2026-10-10T00:45:50.000Z",
-      "closedAt": "2026-10-10T00:45:50.000Z",
-      "mergedAt": "2026-10-10T00:45:50.000Z",
-      "headSha": "53a8cfad6980e114f733451ae0134684e08a8e6d",
+      "createdAt": "2026-10-09T22:00:59Z",
+      "updatedAt": "2026-10-10T00:46:05Z",
+      "closedAt": "2026-10-10T00:46:05Z",
+      "mergedAt": "2026-10-10T00:46:05Z",
+      "headSha": "f81caf37a895cbf21d430814d5ca67e3d83d3a45",
       "baseRef": "main",
-      "mergeCommitSha": "f1592b0c0afe1d06783a082c8b5eb1338ef84b1c"
+      "mergeCommitSha": "bc7e388f52ac3f2f0b17324b662c51530133dd0f"
+    },
+    {
+      "id": 4807458467,
+      "number": 4,
+      "title": "Document merged engine foundation and production launch checks",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/4",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-10T00:52:08Z",
+      "updatedAt": "2026-10-10T00:57:05Z",
+      "closedAt": "2026-10-10T00:57:05Z",
+      "mergedAt": "2026-10-10T00:57:05Z",
+      "headSha": "8660984a16839a13756be88ea4121cce6a701f83",
+      "baseRef": "main",
+      "mergeCommitSha": "1fbc4a39f649b45b89eb66cd135a66776b5a9815"
+    },
+    {
+      "id": 4817382655,
+      "number": 5,
+      "title": "MOE-02: add interactive accounts and short-lived sessions",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/5",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T07:25:51Z",
+      "updatedAt": "2026-10-11T07:27:12Z",
+      "closedAt": "2026-10-11T07:27:12Z",
+      "mergedAt": "2026-10-11T07:27:12Z",
+      "headSha": "5843dbce349966cfa9861d673f532a3a29bc93d8",
+      "baseRef": "main",
+      "mergeCommitSha": "437950ca3b11715f8f91d7cda9ead47d226c0adb"
+    },
+    {
+      "id": 4817416665,
+      "number": 6,
+      "title": "MOE-03: add durable jobs, retries, and source health",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/6",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T07:31:53Z",
+      "updatedAt": "2026-10-11T07:33:09Z",
+      "closedAt": "2026-10-11T07:33:09Z",
+      "mergedAt": "2026-10-11T07:33:09Z",
+      "headSha": "48358be815274f39c343520636282b018a528368",
+      "baseRef": "main",
+      "mergeCommitSha": "ecae0758e271fbc2a73e101a10896f734aec3e4c"
+    },
+    {
+      "id": 4817623679,
+      "number": 7,
+      "title": "MOE-04: add connector manifests and encrypted credential storage",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/7",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T08:08:54Z",
+      "updatedAt": "2026-10-11T08:14:09Z",
+      "closedAt": "2026-10-11T08:14:09Z",
+      "mergedAt": "2026-10-11T08:14:09Z",
+      "headSha": "54c6746b50f5d91bfe432fc072a8c9a5ff7a024a",
+      "baseRef": "main",
+      "mergeCommitSha": "ed441847637d010519dd8202c9bea1529b91c006"
+    },
+    {
+      "id": 4913181295,
+      "number": 11,
+      "title": "MOE-005: Distributor imports and settlements",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/11",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-18T21:58:43Z",
+      "updatedAt": "2026-11-15T18:20:53Z",
+      "closedAt": "2026-11-15T18:20:53Z",
+      "mergedAt": "2026-11-15T18:20:53Z",
+      "headSha": "f2201b329bd264ea3078b423a7eafc9f47f82319",
+      "baseRef": "main",
+      "mergeCommitSha": "88b0879b1cf32385c84b05586af77cd7564f8b92"
+    },
+    {
+      "id": 4913377734,
+      "number": 12,
+      "title": "MOE-007: Ticketing and in-person events",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/12",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-18T22:27:33Z",
+      "updatedAt": "2026-11-15T18:22:53Z",
+      "closedAt": "2026-11-15T18:22:53Z",
+      "mergedAt": "2026-11-15T18:22:53Z",
+      "headSha": "21dd828702f64a1d853ba87770c16bd8970341e9",
+      "baseRef": "main",
+      "mergeCommitSha": "bc1633793b7b34d5aeb2d55ab50b1f1c95ecee87"
+    },
+    {
+      "id": 4913386832,
+      "number": 13,
+      "title": "MOE-008: TrackZero verified speaker adapter",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/13",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-18T22:29:03Z",
+      "updatedAt": "2026-11-15T18:23:40Z",
+      "closedAt": "2026-11-15T18:23:40Z",
+      "mergedAt": "2026-11-15T18:23:40Z",
+      "headSha": "242031b1e7c756ffb48a1f8f44bbbde7f3fa89a2",
+      "baseRef": "main",
+      "mergeCommitSha": "0486970400e0ad83d911933dad6c417e33dd865b"
+    },
+    {
+      "id": 4913394385,
+      "number": 14,
+      "title": "MOE-009: SceneSignal session adapter",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/14",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-18T22:30:18Z",
+      "updatedAt": "2026-11-15T18:24:46Z",
+      "closedAt": "2026-11-15T18:24:46Z",
+      "mergedAt": "2026-11-15T18:24:46Z",
+      "headSha": "33447aba92a385f2af9ad62d3536fb2ad7864ab7",
+      "baseRef": "main",
+      "mergeCommitSha": "926445fa2a67a9415c8572ca7e4273b39ae20295"
+    },
+    {
+      "id": 5325848699,
+      "number": 16,
+      "title": "Ops hardening: auth rate limiting, in-process job worker, engines, doc newline fixes",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/16",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-11-15T18:35:45Z",
+      "updatedAt": "2026-11-15T18:38:18Z",
+      "closedAt": "2026-11-15T18:38:18Z",
+      "mergedAt": "2026-11-15T18:38:18Z",
+      "headSha": "dffdc08419e8bca00b589bdfab745efae6917cc0",
+      "baseRef": "main",
+      "mergeCommitSha": "d41c8149ed567256c9bb796f5a2236fe15f2b1b1"
+    },
+    {
+      "id": 5325919646,
+      "number": 17,
+      "title": "MOE-011/012/015: ISRC mapping, pagination and rollups, CSV exports, anomaly alerts",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/17",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-11-15T18:43:57Z",
+      "updatedAt": "2026-11-15T18:46:28Z",
+      "closedAt": "2026-11-15T18:46:28Z",
+      "mergedAt": "2026-11-15T18:46:28Z",
+      "headSha": "e549e0d3fdd3a12f058fcd76294b7f86a9fef590",
+      "baseRef": "main",
+      "mergeCommitSha": "b90f5c22b31c05d0772a54fcad0f1fb7867903cd"
     }
   ]
 }
