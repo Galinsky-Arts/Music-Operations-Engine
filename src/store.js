@@ -1,5 +1,6 @@
 import {attendanceStore} from './attendance-store.js';
 import {reportingStore} from './reporting-store.js';
+import {labelReportStore} from './label-reports.js';
 import pg from 'pg';
 import {migrate} from './migrations.js';
 import {normalizeLabel,normalizeFamily,normalizeCatalog} from './catalog.js';
@@ -85,6 +86,7 @@ artist_id=EXCLUDED.artist_id,release_id=EXCLUDED.release_id,track_id=EXCLUDED.tr
   return {
     ...attendanceStore(pool,transaction),
     ...reportingStore(pool),
+    ...labelReportStore(pool),
     async importDistributorStatement({csv,labelId,source,statementId,mapping},actor='system') {
       labelId=identifier(labelId,'labelId');
       source=identifier(source,'source');

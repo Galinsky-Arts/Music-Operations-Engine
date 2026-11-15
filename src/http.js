@@ -7,6 +7,7 @@ import {loadWebhookSecrets,verifyWebhook} from './webhooks.js';
 import {clientAddress,createFailureLimiter} from './rate-limit.js';
 import {evaluateAlerts,alertDefaults} from './alerts.js';
 import {csvRow,factColumns,rollupColumns} from './csv.js';
+import {REPORTS} from './label-reports.js';
 
 export async function readBody(req) {
   const chunks=[];let size=0;
@@ -219,6 +220,20 @@ export function handler(store,{credentials=loadCredentials(),webhookSecrets=load
           } while (next);
         }
         return res.end();
+      }
+      const labelReport=/^\/v1\/labels\/([^/]{1,128})\/reports\/([a-z]{1,32})$/.exec(url.pathname);
+      if (labelReport) {
+        requireThat(req.method==='GET','Method not allowed',405);
+        permit(principal,'read');
+        const [,labelId,name]=labelReport;
+        requireThat(REPORTS.includes(name),'Unknown report',404);
+        requireThat(!url.search,'Label reports take no query parameters',400);
+        permitLabel(principal,labelId);
+        const menu=await store.scopes(principal.labels.includes('*') ? null : principal.labels);
+        requireThat(menu.labels.some(l=>l.id===labelId),'Label not found',404);
+        const platform={toolost:'toolost',scenesignal:'scenesignal',trackzero:'trackzero'}[name];
+        if (platform) permitSource(principal,platform);
+        return respond(200,await store.labelReport(name,labelId,{sources:principal.sources || null}));
       }
       const isrcRoute=/^\/v1\/catalog\/isrc\/([A-Za-z0-9-]{12,20})$/.exec(url.pathname);
       if (req.method === 'GET' && isrcRoute) {
