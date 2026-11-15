@@ -31,7 +31,7 @@ export function labelReportStore(pool) {
       const items=await q(`SELECT id,kind,name,release_id AS "releaseId",isrc,upc FROM music_catalog WHERE label_id=$1 AND kind IN ('release','track') ORDER BY name,id`,[labelId]);
       const releases=items.filter(i=>i.kind==='release').map(r=>({labelId,releaseId:reportId(r.id),catalogId:r.id,title:r.name,releaseDate:null,upc:r.upc||null,
         works:[],tracks:items.filter(t=>t.kind==='track' && t.releaseId===r.id).map(t=>({trackId:reportId(t.id),catalogId:t.id,title:t.name,isrc:t.isrc ? t.isrc.trim() : null,workIds:[]})),
-        artworkUrl:null,source:source(revision,observedAtMs)}));
+        artworkUrl:null,source:source(revision,observedAtMs,{status:'live'})}));
       return {status:status(releases),releases,notReported:['releaseDate','works','artworkUrl']};
     },
     async streams(labelId,{sources}) {
