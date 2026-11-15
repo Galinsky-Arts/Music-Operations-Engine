@@ -36,3 +36,11 @@ PRs #1–6 have been merged into `main`; #7 is the MOE-04 work package. Earlier 
 Account recovery, identity verification, MFA and production login rate limiting; live job workers and queue alerts; live provider activation, credential rotation drills and backfill reconciliation; TooLost, music streaming and Stems adapters; source-side TrackZero/SceneSignal exporters; ticketing; collaborators/rights; materialized rollups; royalties and reconciliation; exports, alerts, acceptance and full production hardening.
 
 **Security boundary:** Do not publish the Render service's database URL, bootstrap API key, scoped credentials, webhook secrets or private payloads. No audio/permit/listener identities belong in this reporting backend.
+
+## Deployment record (2026-11-15)
+
+- Render web service `srv-dbsvhuei0phs73e95id0` (`music-operations-engine`, free plan, Virginia, Node 22, auto-deploy from `main`, health check `/health`): https://music-operations-engine-s1yz.onrender.com
+- Neon project `autumn-fog-57776625` (`music-operations-engine`, PostgreSQL 17, aws-us-east-1, free), pooled connection with TLS verification.
+- Runtime variables (values only in Render): `DATABASE_URL`, `ENGINE_API_KEY` (bootstrap admin), `ENGINE_CREDENTIALS` (read-only `command-center` credential used by the Command Center BFF), `NODE_VERSION`, `TRUST_PROXY`, `WORKER_ENABLED`, `WORKER_SOURCES`.
+- Not configured (need owner-provided secrets or decisions): `TRACKZERO_WEBHOOK_SECRET`, `SCENESIGNAL_WEBHOOK_SECRET` (shared with those producers), `CONNECTOR_MASTER_KEY` (before storing provider credentials), provider API credentials, `CORS_ORIGIN` (not needed while the BFF calls server-side).
+- Free-plan instances sleep when idle; the first request after idle is slow. Deployment is not operational acceptance: no live producer telemetry, alert delivery or backup/restore drill has been verified.
