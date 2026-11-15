@@ -1,3 +1,4 @@
+import {attendanceStore} from './attendance-store.js';
 import pg from 'pg';
 import {migrate} from './migrations.js';
 import {normalizeLabel,normalizeFamily,normalizeCatalog} from './catalog.js';
@@ -67,6 +68,7 @@ artist_id=EXCLUDED.artist_id,release_id=EXCLUDED.release_id,track_id=EXCLUDED.tr
     }
   }
   return {
+    ...attendanceStore(pool,transaction),
     async importDistributorStatement({csv,labelId,source,statementId,mapping},actor='system') {
       labelId=identifier(labelId,'labelId');
       source=identifier(source,'source');
@@ -524,3 +526,4 @@ GROUP BY source ORDER BY source`,[labelIds,sources,from,to]);
     async close() { await pool.end(); }
   };
 }
+
