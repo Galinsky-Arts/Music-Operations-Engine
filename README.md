@@ -20,12 +20,14 @@ Use scoped server-side credentials for service integrations and administrator-pr
 
 TrackZero and SceneSignal have independent signed event endpoints and source-specific summaries. Reports include listening, verified speaker contribution, artist rewards, free Grooves, shared sessions, attendance, and complete-album commerce. The [platform contracts](docs/platform-contracts.md) and [producer onboarding](docs/producer-onboarding.md) describe how their backends connect. The producer SDK is available as `music-operations-engine/client`.
 
-Administrator-provisioned interactive accounts and 15-minute bearer sessions are documented in [interactive accounts](docs/interactive-accounts.md). Public signup, recovery, MFA and production rate limiting remain separate gates.
+Administrator-provisioned interactive accounts and 15-minute bearer sessions are documented in [interactive accounts](docs/interactive-accounts.md). Sign-in and bearer authentication failures are rate limited per process; public signup, recovery and MFA remain separate gates.
 
-PostgreSQL-backed ingest/resync jobs, bounded retries, dead-letter state and label-scoped source-health timestamps are documented in [durable jobs and source health](docs/durable-jobs.md). This repository defines the queue contract; a live worker deployment and operational alerts remain separate gates.
+PostgreSQL-backed ingest/resync jobs, bounded retries, dead-letter state and label-scoped source-health timestamps are documented in [durable jobs and source health](docs/durable-jobs.md). An optional in-process worker (`WORKER_ENABLED=1`) runs inline ingest jobs; provider resync handlers and operational alerts remain separate gates.
 
 The receiver contracts are implemented; the app repositories still need live telemetry producers. See [implementation evidence and production gaps](docs/implementation-status.md). Provider-specific consumer experiences remain in their own repositories.
-\nProvider connector manifests, resumable backfill cursors, explicit field mappings and encrypted-at-rest credentials are documented in [connector manifests and credentials](docs/connectors.md). This contract does not imply a live provider connection.\n
+
+Provider connector manifests, resumable backfill cursors, explicit field mappings and encrypted-at-rest credentials are documented in [connector manifests and credentials](docs/connectors.md). This contract does not imply a live provider connection.
+
 ## End-to-End Everywhere progress
 
 The canonical [security/e2eesa-status.json](security/e2eesa-status.json) records standard implementation, complete testing and independent expert review separately. Engine Room reads it automatically from GitHub. All initial stages are pending; existing profile locks and approved decisions remain authoritative. Read [adoption and independent-account instructions](docs/E2EESA_ADOPTION.md), and run `python3 scripts/validate_e2eesa_status.py`. Record validation does not establish product security or certification.
