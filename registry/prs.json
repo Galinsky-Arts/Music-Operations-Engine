@@ -11,7 +11,7 @@
   "scopeNote": "Partial package mapping does not count full implementation.",
   "schemaVersion": 1,
   "roadmapVersion": 1,
-  "observedAt": "2026-11-15T18:48:31Z",
+  "observedAt": "2026-11-17T02:39:10Z",
   "units": [
     {
       "id": "MOE-001",
@@ -36,7 +36,8 @@
       "externalDependencies": [],
       "externalPrerequisites": [],
       "contributingPrs": [
-        16
+        16,
+        20
       ]
     },
     {
@@ -80,10 +81,14 @@
       "id": "MOE-006",
       "title": "Authorized streaming-service reporting",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        20
+      ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [
+        "Live pulls need provider API credentials (YouTube Analytics OAuth); Spotify for Artists, Apple Music and TooLost have no public reporting API, so exported CSVs are uploaded"
+      ]
     },
     {
       "id": "MOE-007",
@@ -128,10 +133,14 @@
       "id": "MOE-010",
       "title": "Stems sales and licenses",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        20
+      ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [
+        "Live Stems pulls need a published Stems reporting API contract; CSV upload is available"
+      ]
     },
     {
       "id": "MOE-011",
@@ -153,7 +162,9 @@
       "id": "MOE-012",
       "title": "Materialized rollups and scale",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        20
+      ],
       "sourcePartialPrEvidence": [
         2
       ],
@@ -168,7 +179,9 @@
       "id": "MOE-013",
       "title": "Revenue recognition and royalty splits",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        20
+      ],
       "dependsOn": [],
       "externalDependencies": [],
       "externalPrerequisites": []
@@ -183,16 +196,23 @@
       ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": []
+      "externalPrerequisites": [],
+      "contributingPrs": [
+        20
+      ]
     },
     {
       "id": "MOE-015",
       "title": "Exports, alerts and acceptance",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        20
+      ],
       "dependsOn": [],
       "externalDependencies": [],
-      "externalPrerequisites": [],
+      "externalPrerequisites": [
+        "Operational acceptance needs an owner-configured alert delivery channel (ALERT_WEBHOOK_URL or Resend email)"
+      ],
       "contributingPrs": [
         17
       ]
@@ -405,6 +425,21 @@
       "headSha": "e549e0d3fdd3a12f058fcd76294b7f86a9fef590",
       "baseRef": "main",
       "mergeCommitSha": "b90f5c22b31c05d0772a54fcad0f1fb7867903cd"
+    },
+    {
+      "id": 5349306989,
+      "number": 20,
+      "title": "MOE-012/013/015: royalties, budgets, alert feed and delivery, stored rollups, provider imports, demo seed",
+      "url": "https://github.com/Galinsky-Arts/Music-Operations-Engine/pull/20",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-11-17T02:27:57Z",
+      "updatedAt": "2026-11-17T02:30:44Z",
+      "closedAt": "2026-11-17T02:30:43Z",
+      "mergedAt": "2026-11-17T02:30:43Z",
+      "headSha": "b50fd5fae638db7f4cadd2cf22cd836afedfdfe5",
+      "baseRef": "main",
+      "mergeCommitSha": "9fcbb982d1c208c1775066c9ea1dacefb9bf8c12"
     }
   ]
 }
