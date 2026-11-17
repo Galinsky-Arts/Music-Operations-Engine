@@ -30,6 +30,12 @@ Provider connector manifests, resumable backfill cursors, explicit field mapping
 
 Canonical ISRC mapping, keyset pagination, daily SQL rollups, CSV exports and derived anomaly alerts are documented in [catalog mapping, rollups, exports and alerts](docs/reporting-and-exports.md).
 
+Royalty splits and statements, budgets, the alert feed and delivery, stored rollups, provider CSV imports, account administration and the synthetic demo seed (`npm run seed:demo`) are documented in [finance and operations](docs/finance-operations.md).
+
+## Status (2026-11-17)
+
+All 16 roadmap units have source implementations. Live and still off: provider live pulls (YouTube connector built, needs OAuth credentials and `PROVIDER_LIVE_PULLS`; Spotify, Apple Music, TooLost and Stems have no public reporting API, so exported CSVs are uploaded), alert webhook/email delivery (needs `ALERT_WEBHOOK_URL` or Resend settings), connector credential storage (needs `CONNECTOR_MASTER_KEY`), TrackZero/SceneSignal signing secrets. Operational acceptance (real producer telemetry, verified alert delivery, backup/restore drill) and independent human security review remain pending.
+
 ## End-to-End Everywhere progress
 
 The canonical [security/e2eesa-status.json](security/e2eesa-status.json) records standard implementation, complete testing and independent expert review separately. Engine Room reads it automatically from GitHub. All initial stages are pending; existing profile locks and approved decisions remain authoritative. Read [adoption and independent-account instructions](docs/E2EESA_ADOPTION.md), and run `python3 scripts/validate_e2eesa_status.py`. Record validation does not establish product security or certification.

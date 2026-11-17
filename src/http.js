@@ -8,6 +8,7 @@ import {clientAddress,createFailureLimiter} from './rate-limit.js';
 import {evaluateAlerts,alertDefaults} from './alerts.js';
 import {csvRow,factColumns,rollupColumns} from './csv.js';
 import {REPORTS} from './label-reports.js';
+import {extraRoutes} from './http-extra.js';
 
 export async function readBody(req) {
   const chunks=[];let size=0;
@@ -46,11 +47,12 @@ function optionalInteger(params,name) {
 export async function report(store,filter) {
   const summary=createSummary();
   for await (const fact of store.iterate(filter)) summary.add(fact);
+  const syntheticLabelIds=store.syntheticLabels ? await store.syntheticLabels(filter.labelIds) : [];
   return {...summary.value(),scope:{labelIds:filter.labelIds,selection:filter.selection,familyId:filter.familyId},from:filter.from,to:filter.to,
-    partial:false,synthetic:false,generatedAt:new Date().toISOString()};
+    partial:false,synthetic:filter.labelIds.length>0 && syntheticLabelIds.length===filter.labelIds.length,syntheticLabelIds,generatedAt:new Date().toISOString()};
 }
 export function handler(store,{credentials=loadCredentials(),webhookSecrets=loadWebhookSecrets(),corsOrigin=process.env.CORS_ORIGIN,onError=console.error,
-  trustProxy=process.env.TRUST_PROXY==='1',loginLimiter=createFailureLimiter({limit:10}),authLimiter=createFailureLimiter({limit:30})}={}) {
+  trustProxy=process.env.TRUST_PROXY==='1',env=process.env,maintenance=null,loginLimiter=createFailureLimiter({limit:10}),authLimiter=createFailureLimiter({limit:30})}={}) {
   return async (req,res)=>{
     const respond=(status,value,headers)=>{ if (headers) for (const [k,v] of Object.entries(headers)) res.setHeader(k,v); return reply(req,res,status,value,corsOrigin); };
     const client='ip:'+clientAddress(req,trustProxy);
@@ -191,7 +193,7 @@ export function handler(store,{credentials=loadCredentials(),webhookSecrets=load
         const filter=await reportFilter(url.searchParams,principal,store);
         const limit=optionalInteger(url.searchParams,'limit'),cursor=url.searchParams.get('cursor');
         if (url.pathname === '/v1/facts') return respond(200,{...await store.factsPage({...filter,limit,cursor}),scope:{labelIds:filter.labelIds}});
-        if (url.pathname === '/v1/rollups/daily') return respond(200,{...await store.dailyRollups({...filter,limit,cursor}),scope:{labelIds:filter.labelIds},
+        if (url.pathname === '/v1/rollups/daily') return respond(200,{materialized:false,...(await store.storedDailyRollups?.({...filter,limit,cursor}) || await store.dailyRollups({...filter,limit,cursor})),scope:{labelIds:filter.labelIds},
           deduplication:'shared logical activities counted once, as in /v1/summary'});
         if (url.pathname === '/v1/catalog/unmapped-isrcs') return respond(200,{items:await store.unmappedIsrcs({...filter,limit}),scope:{labelIds:filter.labelIds}});
         if (url.pathname === '/v1/alerts') {
@@ -274,6 +276,7 @@ export function handler(store,{credentials=loadCredentials(),webhookSecrets=load
         for (const fact of facts) permitLabel(principal,fact.labelId);
         return respond(200,{accepted:await store.upsert(facts,principal.id),source,labelIds:[...new Set(facts.map(f=>f.labelId))]});
       }
+      if (await extraRoutes({req,res,url,principal,store,respond,readBody,reportFilter,env,maintenance})) return;
       return respond(404,{error:'Not found'});
     } catch(error) {
       if (res.headersSent) { onError({event:'stream.failed',name:error.name,code:error.code || 'internal'});return res.destroy(); }

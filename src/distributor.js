@@ -5,12 +5,12 @@ import {identifier} from './validation.js';
 
 const allowedStatuses=new Set(['reported','pending','settled','reversed']);
 // Explicit verified minor-unit exponents; unknown codes fail closed.
-const currencyExponent=new Map([['USD',2],['EUR',2],['GBP',2],['JPY',0],['KWD',3]]);
+export const currencyExponent=new Map([['USD',2],['EUR',2],['GBP',2],['JPY',0],['KWD',3],['CAD',2],['AUD',2],['NZD',2],['CHF',2],['SEK',2],['NOK',2],['DKK',2],['MXN',2],['BRL',2],['KRW',0]]);
 function nonempty(value,name,max=256) {
   requireThat(typeof value==='string' && value.trim().length>0 && value.trim().length<=max,name+' is required');
   return value.trim();
 }
-function minorUnits(raw,name,exponent) {
+export function minorUnits(raw,name,exponent) {
   const value=nonempty(String(raw ?? ''),name,64);
   requireThat(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) &&
     (value.split('.')[1] || '').length<=exponent,name+' has unsupported currency precision');

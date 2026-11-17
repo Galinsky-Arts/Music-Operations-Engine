@@ -153,6 +153,58 @@ export const migrations = [
     CREATE INDEX IF NOT EXISTS music_facts_label_isrc ON music_facts(label_id,isrc) WHERE isrc IS NOT NULL;
     CREATE INDEX IF NOT EXISTS music_catalog_label_isrc ON music_catalog(label_id,isrc) WHERE isrc IS NOT NULL;
     CREATE INDEX IF NOT EXISTS music_facts_scope_updated ON music_facts(label_id,source,updated_at);
+  `},
+  {version:12,sql:`
+    ALTER TABLE music_labels ADD COLUMN IF NOT EXISTS synthetic boolean NOT NULL DEFAULT false;
+    ALTER TABLE music_accounts ADD COLUMN IF NOT EXISTS display_name text;
+    ALTER TABLE music_accounts ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+    CREATE TABLE music_split_rules (
+      label_id text NOT NULL REFERENCES music_labels(id),scope_kind text NOT NULL CHECK(scope_kind IN ('label','release','track')),
+      scope_id text NOT NULL,splits jsonb NOT NULL,note text,updated_by text NOT NULL,updated_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY(label_id,scope_kind,scope_id),CHECK((scope_kind='label')=(scope_id=''))
+    );
+    CREATE TABLE music_royalty_statements (
+      id char(64) PRIMARY KEY,label_id text NOT NULL REFERENCES music_labels(id),period char(7) NOT NULL,
+      payee_id text NOT NULL,payee_name text NOT NULL,currency char(3) NOT NULL,
+      recognized_minor bigint NOT NULL,pending_minor bigint NOT NULL,lines jsonb NOT NULL,content_hash char(64) NOT NULL,
+      status text NOT NULL CHECK(status IN ('draft','final')),generated_by text NOT NULL,generated_at timestamptz NOT NULL DEFAULT now(),
+      finalized_at timestamptz,UNIQUE(label_id,period,payee_id,currency)
+    );
+    CREATE TABLE music_payouts (
+      id text PRIMARY KEY,label_id text NOT NULL REFERENCES music_labels(id),payee_id text NOT NULL,currency char(3) NOT NULL,
+      amount_minor bigint NOT NULL CHECK(amount_minor>0),reference text NOT NULL,paid_at timestamptz NOT NULL,
+      recorded_by text NOT NULL,recorded_at timestamptz NOT NULL DEFAULT now(),UNIQUE(label_id,reference)
+    );
+    CREATE TABLE music_rollup_daily (
+      label_id text NOT NULL REFERENCES music_labels(id),date char(10) NOT NULL,source text NOT NULL,type text NOT NULL,currency char(3) NOT NULL,
+      facts numeric NOT NULL,quantity numeric NOT NULL,amount_minor numeric NOT NULL,PRIMARY KEY(label_id,date,source,type,currency)
+    );
+    CREATE TABLE music_rollup_state (
+      label_id text PRIMARY KEY REFERENCES music_labels(id),watermark timestamptz,fact_count bigint NOT NULL,refreshed_at timestamptz NOT NULL
+    );
+    CREATE TABLE music_alert_events (
+      fingerprint char(64) PRIMARY KEY,label_id text NOT NULL,source text NOT NULL,type text NOT NULL,severity text NOT NULL,
+      message text NOT NULL,details jsonb NOT NULL,first_seen_at timestamptz NOT NULL,last_seen_at timestamptz NOT NULL,
+      resolved_at timestamptz,acknowledged_at timestamptz,acknowledged_by text,delivered_at timestamptz,delivery_error text
+    );
+    CREATE INDEX music_alert_events_open ON music_alert_events(label_id,resolved_at,last_seen_at);
+    CREATE TABLE music_budgets (
+      label_id text NOT NULL REFERENCES music_labels(id),id text NOT NULL,name text NOT NULL,period char(7) NOT NULL,
+      category text NOT NULL,currency char(3) NOT NULL,amount_minor bigint NOT NULL CHECK(amount_minor>0),release_id text,
+      updated_by text NOT NULL,updated_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(label_id,id)
+    );
+    CREATE TABLE music_expenses (
+      id text PRIMARY KEY,label_id text NOT NULL,budget_id text NOT NULL,occurred_on date NOT NULL,currency char(3) NOT NULL,
+      amount_minor bigint NOT NULL CHECK(amount_minor>0),description text NOT NULL,vendor text,
+      recorded_by text NOT NULL,recorded_at timestamptz NOT NULL DEFAULT now(),
+      FOREIGN KEY(label_id,budget_id) REFERENCES music_budgets(label_id,id)
+    );
+    CREATE TABLE music_imports (
+      id text PRIMARY KEY,label_id text NOT NULL REFERENCES music_labels(id),provider text NOT NULL,file_name text,
+      content_hash char(64) NOT NULL,row_count integer NOT NULL,accepted integer NOT NULL,rejected integer NOT NULL,
+      errors jsonb NOT NULL,status text NOT NULL,imported_by text NOT NULL,imported_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX music_imports_scope ON music_imports(label_id,imported_at);
   `}
 ];
 
