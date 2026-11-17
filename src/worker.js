@@ -24,7 +24,7 @@ export const defaultHandlers=Object.freeze({
 });
 
 export function createWorker(store,{sources=['manual'],workerId='engine-worker',handlers=defaultHandlers,intervalMs=15000,batch=10,
-  now=()=>new Date(),log=()=>{}}={}) {
+  now=()=>new Date(),log=()=>{},maintenance=null}={}) {
   let timer=null,running=null,stopped=true;
   async function processJob(job) {
     const handler=handlers[job.kind];
@@ -48,6 +48,7 @@ export function createWorker(store,{sources=['manual'],workerId='engine-worker',
       for (const job of jobs) results.push({id:job.id,result:await processJob(job)});
     }
     if (results.length) log({event:'worker.tick',processed:results.length});
+    if (maintenance) await maintenance.run().catch(error=>log({event:'maintenance.error',name:error?.name,code:error?.code||'internal'}));
     return results;
   }
   function schedule() {

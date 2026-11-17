@@ -1,6 +1,8 @@
 import {attendanceStore} from './attendance-store.js';
 import {reportingStore} from './reporting-store.js';
 import {labelReportStore} from './label-reports.js';
+import {financeStore} from './finance-store.js';
+import {opsStore} from './ops-store.js';
 import pg from 'pg';
 import {migrate} from './migrations.js';
 import {normalizeLabel,normalizeFamily,normalizeCatalog} from './catalog.js';
@@ -87,6 +89,8 @@ artist_id=EXCLUDED.artist_id,release_id=EXCLUDED.release_id,track_id=EXCLUDED.tr
     ...attendanceStore(pool,transaction),
     ...reportingStore(pool),
     ...labelReportStore(pool),
+    ...financeStore(pool,transaction,audit),
+    ...opsStore(pool,transaction,audit),
     async importDistributorStatement({csv,labelId,source,statementId,mapping},actor='system') {
       labelId=identifier(labelId,'labelId');
       source=identifier(source,'source');
@@ -350,21 +354,22 @@ GROUP BY source ORDER BY source`,[labelIds,sources]);
     },
     async putAccount(raw,actor='system') {
       const account=normalizeAccount(raw),digest=await passwordDigest(account.password),id=randomUUID();
+      const displayName=raw.displayName===undefined || raw.displayName===null ? null : String(raw.displayName).trim().slice(0,120) || null;
       try {
         await transaction(async c=>{
           if (!account.labelIds.includes('*')) {
             const labels=await c.query('SELECT id FROM music_labels WHERE id=ANY($1::text[])',[account.labelIds]);
             requireThat(labels.rows.length===account.labelIds.length,'Account label scope contains an unknown label',422);
           }
-          await c.query(`INSERT INTO music_accounts(id,email,password_salt,password_hash,role,label_ids)
-VALUES($1,$2,$3,$4,$5,$6)`,[id,account.email,digest.salt,digest.hash,account.role,account.labelIds]);
+          await c.query(`INSERT INTO music_accounts(id,email,password_salt,password_hash,role,label_ids,display_name)
+VALUES($1,$2,$3,$4,$5,$6,$7)`,[id,account.email,digest.salt,digest.hash,account.role,account.labelIds,displayName]);
           await audit(c,actor,'account.created',account.labelIds,{accountId:id,role:account.role});
         });
       } catch(error) {
         if (error instanceof ApiError && error.status===409) throw new ApiError(409,'Account already exists');
         throw error;
       }
-      return {id,email:account.email,role:account.role,labelIds:account.labelIds,permissions:account.permissions};
+      return {id,email:account.email,displayName,role:account.role,labelIds:account.labelIds,permissions:account.permissions};
     },
     async issueSession(email,password,{now=new Date(),lifetimeMs}={}) {
       const normalized=String(email || '').trim().toLowerCase();
@@ -388,6 +393,17 @@ VALUES($1,$2,$3,$4,$5,$4)`,[session.id,account.id,session.tokenHash,session.crea
         await audit(c,account.id,'session.issued',account.labelIds,{sessionId:session.id,expiresAt:session.expiresAt.toISOString()});
       });
       return {token:session.token,expiresAt:session.expiresAt.toISOString(),principal:principalFromAccount(account,session.id)};
+    },
+    /** Verify an interactive account's password without issuing a session (used by trusted front-ends that keep their own session). */
+    async verifyAccount(email,password,actor='system') {
+      const normalized=String(email || '').trim().toLowerCase();
+      const account=(await pool.query(`SELECT id,email,display_name AS "displayName",password_salt AS "passwordSalt",password_hash AS "passwordHash",role,label_ids AS "labelIds"
+FROM music_accounts WHERE email=$1 AND disabled_at IS NULL`,[normalized])).rows[0];
+      const ok=await passwordMatches(typeof password==='string' ? password : '',account?.passwordSalt || '0'.repeat(32),account?.passwordHash || '0'.repeat(128));
+      if (!account || !ok) throw new ApiError(401,'Unauthorized');
+      await transaction(c=>audit(c,actor,'account.verified',account.labelIds,{accountId:account.id}));
+      const p=principalFromAccount(account,null);
+      return {id:account.id,email:account.email,displayName:account.displayName,role:account.role,labelIds:account.labelIds,permissions:p.permissions};
     },
     async authenticateSession(token,now=new Date()) {
       if (typeof token!=='string' || token.length!==43) return null;
@@ -423,9 +439,9 @@ WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>$2 AND a.disable
       return label;
     },
     async scopes(labelIds) {
-      const labels=(await pool.query(`SELECT l.id,l.name,COALESCE(array_agg(m.family_id ORDER BY m.family_id) FILTER(WHERE m.family_id IS NOT NULL),'{}') AS "familyIds"
+      const labels=(await pool.query(`SELECT l.id,l.name,l.synthetic,COALESCE(array_agg(m.family_id ORDER BY m.family_id) FILTER(WHERE m.family_id IS NOT NULL),'{}') AS "familyIds"
 FROM music_labels l LEFT JOIN music_label_memberships m ON l.id=m.label_id WHERE ($1::text[] IS NULL OR l.id=ANY($1))
-GROUP BY l.id,l.name ORDER BY l.name,l.id`,[labelIds])).rows;
+GROUP BY l.id,l.name,l.synthetic ORDER BY l.name,l.id`,[labelIds])).rows;
       const familyIds=[...new Set(labels.flatMap(l=>l.familyIds))];
       const families=(await pool.query('SELECT id,name FROM music_label_families WHERE id=ANY($1::text[]) ORDER BY name,id',[familyIds])).rows
         .map(f=>({...f,labelIds:labels.filter(l=>l.familyIds.includes(f.id)).map(l=>l.id)}));

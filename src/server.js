@@ -5,6 +5,7 @@ import {openStore} from './store.js';
 import {handler} from './http.js';
 import {loadWebhookSecrets} from './webhooks.js';
 import {createWorker} from './worker.js';
+import {createMaintenance,workerHandlers} from './maintenance.js';
 
 export {handler} from './http.js';
 export async function start(env=process.env) {
@@ -13,19 +14,20 @@ export async function start(env=process.env) {
   const port=Number(env.PORT || 4000);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
   const store=await openStore(env.DATABASE_URL,{connectorKey:env.CONNECTOR_MASTER_KEY});
-  const server=http.createServer(handler(store,{credentials,webhookSecrets,corsOrigin:env.CORS_ORIGIN}));
+  const maintenance=createMaintenance(store,{env,log:entry=>console.log(JSON.stringify(entry))});
+  const server=http.createServer(handler(store,{credentials,webhookSecrets,corsOrigin:env.CORS_ORIGIN,env,maintenance}));
   server.listen(port,()=>console.log('Music Operations Engine listening on '+port));
   let worker=null;
   if (env.WORKER_ENABLED==='1') {
     const sources=(env.WORKER_SOURCES || 'manual').split(',').map(s=>s.trim()).filter(Boolean);
     const intervalMs=Number(env.WORKER_INTERVAL_MS || 15000);
     if (!Number.isInteger(intervalMs) || intervalMs<1000 || intervalMs>3600000) throw new Error('Invalid WORKER_INTERVAL_MS');
-    worker=createWorker(store,{sources,intervalMs,workerId:'engine-worker',log:entry=>console.log(JSON.stringify(entry))});
+    worker=createWorker(store,{sources,intervalMs,workerId:'engine-worker',handlers:workerHandlers(env),maintenance,log:entry=>console.log(JSON.stringify(entry))});
     worker.start();console.log('In-process job worker started for sources: '+sources.join(','));
   }
   const shutdown=()=>server.close(async()=>{await worker?.stop();await store.close();});
   process.once('SIGTERM',shutdown);process.once('SIGINT',shutdown);
-  return {server,store,worker};
+  return {server,store,worker,maintenance};
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   start().catch(error=>{console.error(error.message);process.exitCode=1;});

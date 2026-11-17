@@ -11,6 +11,8 @@ export function loadCredentials(env = process.env) {
   requireThat(Array.isArray(configured), 'ENGINE_CREDENTIALS must be an array');
   const credentials = [...configured];
   if (env.ENGINE_API_KEY) credentials.push({id:'bootstrap',key:env.ENGINE_API_KEY,labels:['*'],permissions:['read','ingest','manage']});
+  // Command Center console credential: system-wide, and may name the signed-in console user for the audit trail.
+  if (env.ENGINE_CONSOLE_KEY) credentials.push({id:'command-center-console',key:env.ENGINE_CONSOLE_KEY,labels:['*'],permissions:['read','ingest','manage'],delegates:true});
   requireThat(credentials.length > 0 && credentials.length <= 100, 'Configure 1–100 engine credentials');
   const ids = new Set(), keys = new Set();
   return credentials.map(c => {
@@ -27,6 +29,7 @@ export function loadCredentials(env = process.env) {
       requireThat(Array.isArray(c.sources) && c.sources.length > 0, 'sources must be a nonempty allowlist');
       c.sources.forEach(s=>identifier(s,'source'));
     }
+    requireThat(c.delegates===undefined || typeof c.delegates==='boolean','delegates must be a boolean');
     return {...c,labels:[...new Set(c.labels)],permissions:[...new Set(c.permissions)]};
   });
 }
@@ -43,7 +46,13 @@ export function authenticate(req, credentials) {
   return principal;
 }
 export async function authenticateRequest(req,credentials,store,now=new Date()) {
-  try { return authenticate(req,credentials); }
+  try {
+    const principal=authenticate(req,credentials);
+    const acting=req.headers['x-acting-user'];
+    // Only delegating credentials may attribute actions to a named console user; the name is recorded, not trusted for access.
+    if (principal.delegates && typeof acting==='string' && /^[A-Za-z0-9._@+:-]{1,128}$/.test(acting)) return {...principal,id:principal.id+'/'+acting,actingUser:acting};
+    return principal;
+  }
   catch(error) {
     if (!(error instanceof ApiError) || error.status!==401) throw error;
     const match=/^Bearer ([^\s]+)$/i.exec(req.headers.authorization || '');
