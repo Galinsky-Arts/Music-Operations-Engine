@@ -25,6 +25,12 @@ export async function start(env=process.env) {
     worker=createWorker(store,{sources,intervalMs,workerId:'engine-worker',handlers:workerHandlers(env),maintenance,log:entry=>console.log(JSON.stringify(entry))});
     worker.start();console.log('In-process job worker started for sources: '+sources.join(','));
   }
+  if (env.BACKUP_DRILL_SOURCE_URL && env.BACKUP_DRILL_TARGET_URL) {
+    // One-off backup/restore drill (see docs/backup-restore.md): read-only comparison, result logged without connection details.
+    import('../scripts/backup-drill.mjs').then(({runDrill})=>runDrill(env.BACKUP_DRILL_SOURCE_URL,env.BACKUP_DRILL_TARGET_URL))
+      .then(r=>console.log(JSON.stringify({...r,tables:r.tables.map(t=>[t.table,t.sourceRows,t.targetRows,t.digestMatch])})))
+      .catch(e=>console.log(JSON.stringify({event:'backup.drill.failed',error:String(e?.message||e).replace(/postgres(ql)?:\/\/\S+/g,'[redacted]')})));
+  }
   const shutdown=()=>server.close(async()=>{await worker?.stop();await store.close();});
   process.once('SIGTERM',shutdown);process.once('SIGINT',shutdown);
   return {server,store,worker,maintenance};
