@@ -52,3 +52,9 @@ Account recovery, identity verification, MFA and production login rate limiting;
 - Off until the owner configures them: alert webhook/email (`ALERT_WEBHOOK_URL`/`ALERT_WEBHOOK_SECRET` or `ALERT_EMAIL_TO`/`ALERT_EMAIL_FROM`/`RESEND_API_KEY`), YouTube live pulls (`CONNECTOR_MASTER_KEY`, `PROVIDER_LIVE_PULLS=youtube`, `youtube` in `WORKER_SOURCES`, stored OAuth credential), TrackZero/SceneSignal signing secrets. Spotify for Artists, Apple Music, TooLost and Stems are fed by CSV upload.
 - Synthetic demo data has not been seeded in production; an administrator can load and remove it from the Command Center Admin screen (`POST /v1/admin/demo-data`).
 - Not yet verified operationally: real provider/producer data, a delivered alert on a real channel, backup/restore drill, independent human security review.
+
+## Backup/restore drill (2026-11-17)
+
+- Backup branch `backup-2026-11-17-engine` (`br-ancient-term-bbzkulks`, read-only endpoint) created from `main` at LSN 0/1C158F8 and kept.
+- Temporary restore branch `drill-restore-2026-11-17` created from the backup, compared read-only by `scripts/backup-drill.mjs` (run once at engine boot on Render because the sandbox cannot reach Neon; drill env vars removed afterwards), then deleted.
+- Result: `match: true`, schema version 12 on both, 29 tables, identical row counts and content digests. Production then held only 14 rows (bootstrap label, migrations, rollup state), so this proves the procedure, not restore time at volume. Runbook: `docs/backup-restore.md`.
